@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: tax-calculator-build-task
+spec:
+  workspaces:
+    - name: source
+  steps:
+    - name: unit-test
+      image: node:18
+      workingDir: $(workspaces.source.path)/zntwk-tax_calculator
+      script: |
+        npm install
+        # This triggers Jasmine using the package.json test script
+        npm test 
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:latest
+      command:
+        - /kaniko/executor
+      args:
+        - --dockerfile=$(workspaces.source.path)/zntwk-tax_calculator/Dockerfile
+        - --destination=us.icr.io/your-namespace/tax-calculator:latest
+        - --context=$(workspaces.source.path)/zntwk-tax_calculator
